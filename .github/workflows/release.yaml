@@ -75,7 +75,7 @@ jobs:
           PR_BODY=$(echo "$PR_BODY" | sed 's/^          //')
 
           gh pr create \
-            --repo Rochdy/gitopy-infra \
+            --repo Rochdy/mygitopsnodeapi-infra \
             --base main \
             --head "$BRANCH" \
             --title "Automated Production Promotion Request: ${TAG}" \
