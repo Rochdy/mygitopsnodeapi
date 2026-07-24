@@ -42,7 +42,7 @@ jobs:
 
       - name: Update Image Tag in Staging Overlay
         run: |
-          sed -i "s|image: .*/multienvsapi:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/myk8sgitopsapp:${{ github.sha }}|" \
+          sed -i "s|image: .*/myk8sgitopsapp:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/myk8sgitopsapp:${{ github.sha }}|" \
             overlays/staging/deployment-patches.yaml
 
       - name: Commit and Push Changes to Infra Repo
