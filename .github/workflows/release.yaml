@@ -9,6 +9,10 @@ jobs:
     steps:
       - name: Checkout Infra Repo
         uses: actions/checkout@v4
+        with:
+          repository: 'Rochdy/mygitopsnodeapi-infra'
+          token: ${{ secrets.INFRA_REPO_PAT }}
+          ref: 'main'
 
       - name: Copy Staging Image Tag to Production
         id: promote
