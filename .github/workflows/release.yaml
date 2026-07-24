@@ -1,0 +1,78 @@
+name: Promote Staging to Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Infra Repo
+        uses: actions/checkout@v4
+
+      - name: Copy Staging Image Tag to Production
+        id: promote
+        run: |
+          STAGING_FILE="overlays/staging/deployment-patches.yaml"
+          PRODUCTION_FILE="overlays/production/deployment-patches.yaml"
+
+          IMAGE_LINE=$(grep -E '^\s+image:\s+' "$STAGING_FILE" | head -n1)
+          IMAGE=$(echo "$IMAGE_LINE" | awk '{print $2}')
+          TAG="${IMAGE##*:}"
+
+          if [ -z "$IMAGE" ]; then
+            echo "Failed to read image from staging overlay"
+            exit 1
+          fi
+
+          sed -i "s|image: .*/myk8sgitopsapp:.*|image: ${IMAGE}|" "$PRODUCTION_FILE"
+
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Promoting image: ${IMAGE}"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
+        run: |
+          BRANCH="promote/staging-to-production-${{ steps.promote.outputs.tag }}"
+          IMAGE="${{ steps.promote.outputs.image }}"
+          TAG="${{ steps.promote.outputs.tag }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add overlays/production/deployment-patches.yaml
+          git commit -m "chore: promote staging image ${TAG} to production"
+          git push -u origin "$BRANCH"
+
+          PR_BODY=$(cat <<EOF
+          ## Automated Production Promotion Request
+
+          This pull request promotes the current **staging** image to **production**.
+
+          | Field | Value |
+          | --- | --- |
+          | Image | \`${IMAGE}\` |
+          | Tag | \`${TAG}\` |
+          | Source | \`overlays/staging/deployment-patches.yaml\` |
+          | Target | \`overlays/production/deployment-patches.yaml\` |
+          | Triggered by | @${{ github.actor }} |
+          | Workflow | Promote Staging to Production |
+
+          ### Notes
+          - Review the staging environment before merging.
+          - Merging this PR will update the production overlay image tag.
+          EOF
+          )
+
+          # Strip common leading indentation from the heredoc body
+          PR_BODY=$(echo "$PR_BODY" | sed 's/^          //')
+
+          gh pr create \
+            --repo Rochdy/gitopy-infra \
+            --base main \
+            --head "$BRANCH" \
+            --title "Automated Production Promotion Request: ${TAG}" \
+            --body "$PR_BODY"
