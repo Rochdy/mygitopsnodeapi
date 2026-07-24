@@ -11,7 +11,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'Rochdy/mygitopsnodeapi-infra'
-          token: ${{ secrets.INFRA_REPO_PAT }}
+          token: ${{ secrets.INFRA_REPO_TOKEN }}
           ref: 'main'
 
       - name: Copy Staging Image Tag to Production
