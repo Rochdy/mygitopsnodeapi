@@ -4,7 +4,7 @@ const app = express();
 app.get("/", (req, res) => {
     res.json({
         environment: process.env.ENV_NAME,
-        version: "1.0.0",
+        version: "2.0.0",
         message: `Hello from ${process.env.ENV_NAME}`,
     });
 });
